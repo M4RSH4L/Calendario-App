@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, AuthState } from '../types';
-import { supabase, authHelpers, dbHelpers } from '../utils/supabaseClient.ts';
+import { supabase, authHelpers, dbHelpers } from '../utils/supabaseClient';
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
@@ -33,10 +33,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     // Get initial session
     const getInitialSession = async () => {
-      const { session } = await authHelpers.getSession();
-      if (session?.user) {
-        await loadUserData(session.user);
-      } else {
+      try {
+        const { session } = await authHelpers.getSession();
+        if (session?.user) {
+          await loadUserData(session.user);
+        } else {
+          setAuthState(prev => ({ ...prev, loading: false }));
+        }
+      } catch (error) {
+        console.error('Error getting initial session:', error);
         setAuthState(prev => ({ ...prev, loading: false }));
       }
     };
@@ -45,6 +50,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.id);
+      
       if (event === 'SIGNED_IN' && session?.user) {
         await loadUserData(session.user);
       } else if (event === 'SIGNED_OUT') {
@@ -65,7 +72,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Check if user has completed segmentation by looking for filters
       const { data: filters, error: filtersError } = await dbHelpers.getUserFilters(supabaseUser.id);
-      console.log('User filters loaded:', filters);
       
       if (filtersError && filtersError.code !== 'PGRST116') {
         console.error('Error loading filters:', filtersError);
@@ -98,47 +104,57 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
+      setAuthState(prev => ({ ...prev, loading: true }));
+      
       const { data, error } = await authHelpers.signIn(email, password);
       
       if (error) {
+        setAuthState(prev => ({ ...prev, loading: false }));
         return { success: false, error: error.message };
       }
 
       if (data.user) {
-        await loadUserData(data.user);
+        // loadUserData will be called by the auth state change listener
         return { success: true };
       }
 
+      setAuthState(prev => ({ ...prev, loading: false }));
       return { success: false, error: 'Login failed' };
     } catch (error) {
       console.error('Login error:', error);
+      setAuthState(prev => ({ ...prev, loading: false }));
       return { success: false, error: 'An unexpected error occurred' };
     }
   };
 
   const register = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
+      setAuthState(prev => ({ ...prev, loading: true }));
+      
       const { data, error } = await authHelpers.signUp(email, password);
       
       if (error) {
+        setAuthState(prev => ({ ...prev, loading: false }));
         return { success: false, error: error.message };
       }
 
       if (data.user) {
         // For email confirmation flow, user might not be immediately available
         if (data.user.email_confirmed_at) {
-          await loadUserData(data.user);
+          // loadUserData will be called by the auth state change listener
+          return { success: true };
         } else {
           // Handle email confirmation case
           setAuthState(prev => ({ ...prev, loading: false }));
           return { success: true, error: 'Please check your email to confirm your account' };
         }
-        return { success: true };
       }
 
+      setAuthState(prev => ({ ...prev, loading: false }));
       return { success: false, error: 'Registration failed' };
     } catch (error) {
       console.error('Registration error:', error);
+      setAuthState(prev => ({ ...prev, loading: false }));
       return { success: false, error: 'An unexpected error occurred' };
     }
   };
@@ -146,11 +162,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async () => {
     try {
       await authHelpers.signOut();
-      setAuthState({
-        user: null,
-        isAuthenticated: false,
-        loading: false
-      });
+      // Auth state will be updated by the listener
     } catch (error) {
       console.error('Logout error:', error);
     }

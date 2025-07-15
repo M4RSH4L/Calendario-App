@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { X, Calendar, Clock, User, Save } from 'lucide-react';
+import { X, Calendar, Clock, Save } from 'lucide-react';
 import { Event } from '../../types';
-import { dbHelpers } from '../../utils/supabaseClient.ts';
+import { dbHelpers } from '../../utils/supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 
 interface EventModalProps {
@@ -27,33 +27,53 @@ const EventModal: React.FC<EventModalProps> = ({
     time: event?.time || '09:00'
   });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user) {
+      setError('Usuario no autenticado');
+      return;
+    }
+
+    if (!formData.title.trim()) {
+      setError('El título es requerido');
+      return;
+    }
+
+    if (!formData.description.trim()) {
+      setError('La descripción es requerida');
+      return;
+    }
 
     setLoading(true);
+    setError('');
+
     try {
       if (event) {
-        const { error } = await dbHelpers.updateEvent(event.id, formData);
-        if (error) {
-          console.error('Error updating event:', error);
+        const { error: updateError } = await dbHelpers.updateEvent(event.id, formData);
+        if (updateError) {
+          console.error('Error updating event:', updateError);
+          setError('Error al actualizar el evento');
           return;
         }
       } else {
-        const { error } = await dbHelpers.createEvent({
+        const { error: createError } = await dbHelpers.createEvent({
           ...formData,
           created_by: user.id
         });
-        if (error) {
-          console.error('Error creating event:', error);
+        if (createError) {
+          console.error('Error creating event:', createError);
+          setError('Error al crear el evento');
           return;
         }
       }
+      
       onEventSaved();
       onClose();
     } catch (error) {
       console.error('Error saving event:', error);
+      setError('Error inesperado al guardar el evento');
     } finally {
       setLoading(false);
     }
@@ -62,6 +82,7 @@ const EventModal: React.FC<EventModalProps> = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    setError(''); // Clear error when user types
   };
 
   if (!isOpen) return null;
@@ -71,7 +92,7 @@ const EventModal: React.FC<EventModalProps> = ({
       <div className="w-full max-w-md backdrop-blur-md bg-white/10 rounded-3xl border border-white/20 p-6 shadow-2xl">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-white">
-            {event ? 'Edit Event' : 'Create New Event'}
+            {event ? 'Editar Evento' : 'Crear Nuevo Evento'}
           </h2>
           <button
             onClick={onClose}
@@ -84,7 +105,7 @@ const EventModal: React.FC<EventModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Event Title
+              Título del Evento
             </label>
             <input
               type="text"
@@ -92,14 +113,14 @@ const EventModal: React.FC<EventModalProps> = ({
               value={formData.title}
               onChange={handleInputChange}
               className="w-full p-4 bg-black/30 border border-white/20 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="Enter event title"
+              placeholder="Ingresa el título del evento"
               required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Description
+              Descripción
             </label>
             <textarea
               name="description"
@@ -107,7 +128,7 @@ const EventModal: React.FC<EventModalProps> = ({
               onChange={handleInputChange}
               rows={3}
               className="w-full p-4 bg-black/30 border border-white/20 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
-              placeholder="Enter event description"
+              placeholder="Ingresa la descripción del evento"
               required
             />
           </div>
@@ -116,7 +137,7 @@ const EventModal: React.FC<EventModalProps> = ({
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 <Calendar className="inline w-4 h-4 mr-1" />
-                Date
+                Fecha
               </label>
               <input
                 type="date"
@@ -131,7 +152,7 @@ const EventModal: React.FC<EventModalProps> = ({
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 <Clock className="inline w-4 h-4 mr-1" />
-                Time
+                Hora
               </label>
               <input
                 type="time"
@@ -144,13 +165,19 @@ const EventModal: React.FC<EventModalProps> = ({
             </div>
           </div>
 
+          {error && (
+            <div className="p-3 bg-red-900/20 border border-red-500/30 rounded-2xl">
+              <p className="text-red-400 text-sm">{error}</p>
+            </div>
+          )}
+
           <div className="flex space-x-4 pt-4">
             <button
               type="button"
               onClick={onClose}
               className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-6 rounded-2xl transition-all duration-300"
             >
-              Cancel
+              Cancelar
             </button>
             <button
               type="submit"
@@ -162,7 +189,7 @@ const EventModal: React.FC<EventModalProps> = ({
               ) : (
                 <>
                   <Save className="w-4 h-4" />
-                  <span>{event ? 'Update' : 'Create'}</span>
+                  <span>{event ? 'Actualizar' : 'Crear'}</span>
                 </>
               )}
             </button>

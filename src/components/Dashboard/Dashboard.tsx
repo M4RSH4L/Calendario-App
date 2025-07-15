@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { LogOut, Settings, Calendar as CalendarIcon, Filter } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Event } from '../../types';
-import { dbHelpers } from '../../utils/supabaseClient.ts';
+import { dbHelpers } from '../../utils/supabaseClient';
 import Calendar from '../Calendar/Calendar';
 import EventList from '../Events/EventList';
 import EventModal from '../Events/EventModal';
@@ -14,6 +14,7 @@ const Dashboard: React.FC = () => {
   const [selectedDateEvents, setSelectedDateEvents] = useState<Event[]>([]);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | undefined>();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadTodayEvents();
@@ -34,6 +35,8 @@ const Dashboard: React.FC = () => {
       setTodayEvents(events || []);
     } catch (error) {
       console.error('Error loading today events:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -71,13 +74,24 @@ const Dashboard: React.FC = () => {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString('es-ES', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="backdrop-blur-md bg-white/10 rounded-3xl border border-white/20 p-8 text-center">
+          <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white">Cargando dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -89,23 +103,27 @@ const Dashboard: React.FC = () => {
               Future<span className="text-purple-400">Cal</span>
             </h1>
             <div className="text-sm text-gray-300">
-              Welcome back, {user?.email}
+              Bienvenido, {user?.email}
               {user?.hasCompletedSegmentation && (
                 <div className="flex items-center mt-1 space-x-2">
                   <Filter className="w-3 h-3 text-green-400" />
-                  <span className="text-xs text-green-400">Segmentation completed</span>
+                  <span className="text-xs text-green-400">Segmentación completada</span>
                 </div>
               )}
             </div>
           </div>
           
           <div className="flex items-center space-x-4">
-            <button className="p-2 bg-black/30 hover:bg-white/10 text-white rounded-xl transition-all duration-300">
+            <button 
+              className="p-2 bg-black/30 hover:bg-white/10 text-white rounded-xl transition-all duration-300"
+              title="Configuración"
+            >
               <Settings className="w-5 h-5" />
             </button>
             <button
               onClick={logout}
               className="p-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-xl transition-all duration-300"
+              title="Cerrar sesión"
             >
               <LogOut className="w-5 h-5" />
             </button>
@@ -118,7 +136,7 @@ const Dashboard: React.FC = () => {
         <div className="backdrop-blur-md bg-white/10 rounded-3xl border border-white/20 p-6 mb-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-white mb-2">Today's Events</h2>
+              <h2 className="text-2xl font-bold text-white mb-2">Eventos de Hoy</h2>
               <p className="text-gray-300">
                 {formatDate(new Date().toISOString().split('T')[0])}
               </p>
@@ -130,7 +148,7 @@ const Dashboard: React.FC = () => {
                   {todayEvents.length}
                 </div>
                 <div className="text-sm text-gray-400">
-                  {todayEvents.length === 1 ? 'Event' : 'Events'}
+                  {todayEvents.length === 1 ? 'Evento' : 'Eventos'}
                 </div>
               </div>
             </div>
@@ -168,7 +186,7 @@ const Dashboard: React.FC = () => {
           <div>
             <div className="mb-4">
               <h3 className="text-xl font-semibold text-white mb-2">
-                Events for {formatDate(selectedDate)}
+                Eventos para {formatDate(selectedDate)}
               </h3>
             </div>
             <EventList

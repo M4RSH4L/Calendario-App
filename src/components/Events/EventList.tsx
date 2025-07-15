@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Clock, User, Edit, Trash2 } from 'lucide-react';
 import { Event } from '../../types';
 import { useAuth } from '../../context/AuthContext';
-import { dbHelpers } from '../../utils/supabaseClient.ts';
+import { dbHelpers } from '../../utils/supabaseClient';
 
 interface EventListProps {
   events: Event[];
@@ -35,7 +35,7 @@ const EventList: React.FC<EventListProps> = ({ events, onEventEdit, onEventsUpda
   if (events.length === 0) {
     return (
       <div className="backdrop-blur-md bg-white/10 rounded-3xl border border-white/20 p-8 text-center">
-        <p className="text-gray-400">No events scheduled for this day.</p>
+        <p className="text-gray-400">No hay eventos programados para este día.</p>
       </div>
     );
   }
@@ -59,16 +59,17 @@ const EventList: React.FC<EventListProps> = ({ events, onEventEdit, onEventsUpda
                 </div>
                 <div className="flex items-center space-x-1">
                   <User className="w-4 h-4" />
-                  <span>Event</span>
+                  <span>Evento</span>
                 </div>
               </div>
             </div>
 
-            {user && (
+            {user && user.id === event.createdBy && (
               <div className="flex space-x-2 ml-4">
                 <button
                   onClick={() => onEventEdit(event)}
                   className="p-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-xl transition-all duration-300"
+                  title="Editar evento"
                 >
                   <Edit className="w-4 h-4" />
                 </button>
@@ -76,6 +77,7 @@ const EventList: React.FC<EventListProps> = ({ events, onEventEdit, onEventsUpda
                   onClick={() => handleDelete(event.id)}
                   disabled={deletingId === event.id}
                   className="p-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-xl transition-all duration-300 disabled:opacity-50"
+                  title="Eliminar evento"
                 >
                   {deletingId === event.id ? (
                     <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />

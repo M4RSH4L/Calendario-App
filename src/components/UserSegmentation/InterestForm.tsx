@@ -65,10 +65,15 @@ const InterestForm: React.FC = () => {
     const newAnswers = [...answers];
     newAnswers[currentStep] = option;
     setAnswers(newAnswers);
-    setError(''); // Clear any previous errors
+    setError('');
   };
 
   const handleNext = () => {
+    if (!isStepValid()) {
+      setError('Por favor, selecciona una opción antes de continuar.');
+      return;
+    }
+
     if (currentStep < questions.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
@@ -95,11 +100,6 @@ const InterestForm: React.FC = () => {
     try {
       console.log('Saving user filters...', { userId: user.id, answers });
 
-      // Validate that we have a valid user ID
-      if (!user.id) {
-        setError('Error: Usuario no válido. Por favor, inicia sesión nuevamente.');
-        return;
-      }
       const filters: UserFilters = {
         question_1: answers[0],
         question_2: answers[1],
@@ -217,7 +217,7 @@ const InterestForm: React.FC = () => {
 
           <button
             onClick={handleNext}
-            disabled={!isStepValid() || loading}
+            disabled={loading}
             className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
           >
             {loading ? (
@@ -237,6 +237,7 @@ const InterestForm: React.FC = () => {
             <div className="mt-4 p-3 bg-black/20 rounded-lg text-xs text-gray-400">
               <p>Debug: Step {currentStep + 1}, User: {user?.id}</p>
               <p>Answers: {JSON.stringify(answers)}</p>
+              <p>Has completed: {user?.hasCompletedSegmentation ? 'Yes' : 'No'}</p>
             </div>
           )}
         </div>

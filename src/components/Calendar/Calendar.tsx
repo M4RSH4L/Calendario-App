@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Event } from '../../types';
-import { dbHelpers } from '../../utils/supabaseClient.ts';
+import { dbHelpers } from '../../utils/supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 
 interface CalendarProps {
@@ -13,13 +13,15 @@ interface CalendarProps {
 const Calendar: React.FC<CalendarProps> = ({ onDateSelect, onEventCreate, selectedDate }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
     loadEvents();
-  }, []);
+  }, [currentDate]);
 
   const loadEvents = async () => {
+    setLoading(true);
     try {
       const { data: allEvents, error } = await dbHelpers.getEvents();
       if (error) {
@@ -29,6 +31,8 @@ const Calendar: React.FC<CalendarProps> = ({ onDateSelect, onEventCreate, select
       setEvents(allEvents || []);
     } catch (error) {
       console.error('Error loading events:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -91,7 +95,7 @@ const Calendar: React.FC<CalendarProps> = ({ onDateSelect, onEventCreate, select
   };
 
   const days = getDaysInMonth(currentDate);
-  const monthYear = currentDate.toLocaleDateString('en-US', { 
+  const monthYear = currentDate.toLocaleDateString('es-ES', { 
     month: 'long', 
     year: 'numeric' 
   });
@@ -99,12 +103,13 @@ const Calendar: React.FC<CalendarProps> = ({ onDateSelect, onEventCreate, select
   return (
     <div className="backdrop-blur-md bg-white/10 rounded-3xl border border-white/20 p-6 shadow-2xl">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-white">{monthYear}</h2>
+        <h2 className="text-2xl font-bold text-white capitalize">{monthYear}</h2>
         <div className="flex items-center space-x-2">
           {user && (
             <button
               onClick={onEventCreate}
               className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white p-2 rounded-xl transition-all duration-300 transform hover:scale-105"
+              title="Crear nuevo evento"
             >
               <Plus className="w-5 h-5" />
             </button>
@@ -112,12 +117,14 @@ const Calendar: React.FC<CalendarProps> = ({ onDateSelect, onEventCreate, select
           <button
             onClick={() => navigateMonth('prev')}
             className="bg-black/30 hover:bg-white/10 text-white p-2 rounded-xl transition-all duration-300"
+            title="Mes anterior"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <button
             onClick={() => navigateMonth('next')}
             className="bg-black/30 hover:bg-white/10 text-white p-2 rounded-xl transition-all duration-300"
+            title="Mes siguiente"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
@@ -125,12 +132,18 @@ const Calendar: React.FC<CalendarProps> = ({ onDateSelect, onEventCreate, select
       </div>
 
       <div className="grid grid-cols-7 gap-1 mb-4">
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+        {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
           <div key={day} className="text-center text-gray-400 font-medium py-2">
             {day}
           </div>
         ))}
       </div>
+
+      {loading && (
+        <div className="flex justify-center py-8">
+          <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
 
       <div className="grid grid-cols-7 gap-1">
         {days.map((day, index) => {

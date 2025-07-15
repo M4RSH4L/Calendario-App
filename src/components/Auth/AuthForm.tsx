@@ -20,13 +20,13 @@ const AuthForm: React.FC = () => {
     setSuccess('');
 
     if (!email || !email.includes('@')) {
-      setError('Please enter a valid email address');
+      setError('Por favor, ingresa una dirección de email válida');
       setLoading(false);
       return;
     }
 
     if (!password || password.length < 6) {
-      setError('Password must be at least 6 characters long');
+      setError('La contraseña debe tener al menos 6 caracteres');
       setLoading(false);
       return;
     }
@@ -41,13 +41,13 @@ const AuthForm: React.FC = () => {
       }
 
       if (!result.success) {
-        setError(result.error || 'An error occurred');
+        setError(result.error || 'Ocurrió un error');
       } else if (result.error) {
         // This handles the email confirmation case
         setSuccess(result.error);
       }
     } catch (err) {
-      setError('An unexpected error occurred. Please try again.');
+      setError('Ocurrió un error inesperado. Por favor, intenta nuevamente.');
     } finally {
       setLoading(false);
     }
@@ -62,7 +62,7 @@ const AuthForm: React.FC = () => {
               Future<span className="text-purple-400">Cal</span>
             </h1>
             <p className="text-gray-300">
-              {isLogin ? 'Welcome back' : 'Join the future of events'}
+              {isLogin ? 'Bienvenido de nuevo' : 'Únete al futuro de los eventos'}
             </p>
           </div>
 
@@ -74,7 +74,7 @@ const AuthForm: React.FC = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
+                  placeholder="Ingresa tu email"
                   className="w-full pl-12 pr-4 py-4 bg-black/30 border border-white/20 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
                   required
                 />
@@ -86,7 +86,7 @@ const AuthForm: React.FC = () => {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder="Ingresa tu contraseña"
                   className="w-full pl-12 pr-12 py-4 bg-black/30 border border-white/20 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
                   required
                 />
@@ -122,7 +122,7 @@ const AuthForm: React.FC = () => {
               ) : (
                 <>
                   {isLogin ? <LogIn className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
-                  <span>{isLogin ? 'Sign In' : 'Sign Up'}</span>
+                  <span>{isLogin ? 'Iniciar Sesión' : 'Registrarse'}</span>
                 </>
               )}
             </button>
@@ -130,7 +130,7 @@ const AuthForm: React.FC = () => {
 
           <div className="mt-8 text-center">
             <p className="text-gray-400">
-              {isLogin ? "Don't have an account?" : "Already have an account?"}
+              {isLogin ? "¿No tienes una cuenta?" : "¿Ya tienes una cuenta?"}
             </p>
             <button
               onClick={() => {
@@ -140,14 +140,14 @@ const AuthForm: React.FC = () => {
               }}
               className="text-purple-400 hover:text-purple-300 font-medium mt-2 transition-colors duration-300"
             >
-              {isLogin ? 'Sign Up' : 'Sign In'}
+              {isLogin ? 'Registrarse' : 'Iniciar Sesión'}
             </button>
           </div>
 
           {isLogin && (
             <div className="mt-6 text-center">
               <p className="text-xs text-gray-500">
-                Demo: Create an account to get started
+                Demo: Crea una cuenta para comenzar
               </p>
             </div>
           )}
