@@ -71,11 +71,14 @@ export const dbHelpers = {
 
   // Get user filters
   async getUserFilters(userId: string) {
+    console.log('Getting user filters for:', userId);
     const { data, error } = await supabase
       .from('user_filters')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
+    
+    console.log('getUserFilters response:', { data, error });
     return { data, error };
   },
 

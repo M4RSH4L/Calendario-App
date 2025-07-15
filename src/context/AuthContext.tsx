@@ -64,8 +64,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('Loading user data for:', supabaseUser.id);
       
       // Check if user has completed segmentation by looking for filters
-      const { data: filters } = await dbHelpers.getUserFilters(supabaseUser.id);
+      const { data: filters, error: filtersError } = await dbHelpers.getUserFilters(supabaseUser.id);
       console.log('User filters loaded:', filters);
+      
+      if (filtersError && filtersError.code !== 'PGRST116') {
+        console.error('Error loading filters:', filtersError);
+      }
       
       const user: User = {
         id: supabaseUser.id,

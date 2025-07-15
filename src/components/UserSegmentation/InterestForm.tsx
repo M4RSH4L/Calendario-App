@@ -95,6 +95,11 @@ const InterestForm: React.FC = () => {
     try {
       console.log('Saving user filters...', { userId: user.id, answers });
 
+      // Validate that we have a valid user ID
+      if (!user.id) {
+        setError('Error: Usuario no válido. Por favor, inicia sesión nuevamente.');
+        return;
+      }
       const filters: UserFilters = {
         question_1: answers[0],
         question_2: answers[1],
@@ -102,11 +107,13 @@ const InterestForm: React.FC = () => {
         question_4: answers[3],
       };
 
+      console.log('Attempting to save filters:', filters);
+      
       const { data, error: saveError } = await dbHelpers.saveUserFilters(user.id, filters);
       
       if (saveError) {
         console.error('Error saving filters:', saveError);
-        setError('Error al guardar las respuestas. Por favor, intenta nuevamente.');
+        setError(`Error al guardar las respuestas: ${saveError.message || 'Error desconocido'}`);
         return;
       }
 
