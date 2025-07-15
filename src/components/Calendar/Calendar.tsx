@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Event } from '../../types';
-import { database } from '../../utils/database';
+import { dbHelpers } from '../../utils/supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 
 interface CalendarProps {
@@ -21,8 +21,12 @@ const Calendar: React.FC<CalendarProps> = ({ onDateSelect, onEventCreate, select
 
   const loadEvents = async () => {
     try {
-      const allEvents = await database.getEvents();
-      setEvents(allEvents);
+      const { data: allEvents, error } = await dbHelpers.getEvents();
+      if (error) {
+        console.error('Error loading events:', error);
+        return;
+      }
+      setEvents(allEvents || []);
     } catch (error) {
       console.error('Error loading events:', error);
     }
@@ -97,7 +101,7 @@ const Calendar: React.FC<CalendarProps> = ({ onDateSelect, onEventCreate, select
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-white">{monthYear}</h2>
         <div className="flex items-center space-x-2">
-          {user?.isAdmin && (
+          {user && (
             <button
               onClick={onEventCreate}
               className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white p-2 rounded-xl transition-all duration-300 transform hover:scale-105"

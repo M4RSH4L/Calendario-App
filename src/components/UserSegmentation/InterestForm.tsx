@@ -1,77 +1,69 @@
 import React, { useState } from 'react';
 import { Check, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { UserInterests } from '../../types';
-import { database } from '../../utils/database';
+import { UserFilters } from '../../types';
+import { dbHelpers } from '../../utils/supabaseClient';
 
 const InterestForm: React.FC = () => {
   const { user, updateUser } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
-  const [interests, setInterests] = useState<UserInterests>({
-    eventTypes: [],
-    updateFrequency: '',
-    industries: []
-  });
+  const [answers, setAnswers] = useState<string[]>(['', '', '', '']);
+  const [loading, setLoading] = useState(false);
 
   const questions = [
     {
       title: "1. ¿Qué tipo de negocio tenés actualmente?",
-      subtitle: "Selecciona todas las opciones que apliquen",
-      type: "multiple",
+      subtitle: "Selecciona la opción que mejor te describa",
       options: [
         "Tienda física",
         "Tienda online / eCommerce",
         "Vendo por redes sociales o WhatsApp",
         "Hago ventas mayoristas o por catálogo",
         "Estoy arrancando / validando una idea",
-        "Tienda Fisica y online",
-       
-      ],
-      key: "eventTypes" as keyof UserInterests
+        "Tienda física y online",
+      ]
     },
     {
       title: "2. ¿Dónde realizás la mayoría de tus ventas hoy?",
-      subtitle: "Selecciona una opción",
-      type: "single",
+      subtitle: "Selecciona tu canal principal de ventas",
       options: [
         "En mi local o showroom",
         "A través de una tienda online",
         "Por redes sociales (Instagram, Facebook, etc.)",
         "Por WhatsApp u otros chats",
         "No tengo un canal principal todavía",
-        "onlyfans",
-      ],
-      key: "updateFrequency" as keyof UserInterests
+        "Marketplaces (MercadoLibre, Amazon, etc.)",
+      ]
     },
     {
-      title: "5. ¿Qué te gustaría mejorar en tu negocio?",
-      subtitle: "Selecciona las áreas que te interesan",
-      type: "multiple",
+      title: "3. ¿Cuál es tu principal desafío en ventas?",
+      subtitle: "Identifica tu mayor obstáculo actual",
+      options: [
+        "Generar más tráfico/visitas",
+        "Convertir visitantes en clientes",
+        "Retener clientes existentes",
+        "Gestionar el inventario",
+        "Competir con precios",
+        "Llegar a nuevos mercados",
+      ]
+    },
+    {
+      title: "4. ¿Qué te gustaría mejorar en tu negocio?",
+      subtitle: "Selecciona tu prioridad principal",
       options: [
         "Tener más ventas en fechas clave",
         "Planificar mejor mis promociones",
         "Mejorar mi presencia online / redes sociales",
         "Automatizar procesos (cobros, envíos, campañas)",
         "No estoy seguro, pero quiero crecer",
-      ],
-      key: "industries" as keyof UserInterests
+      ]
     }
   ];
 
   const handleOptionSelect = (option: string) => {
-    const question = questions[currentStep];
-    const key = question.key;
-
-    if (question.type === "multiple") {
-      const currentValues = interests[key] as string[];
-      const newValues = currentValues.includes(option)
-        ? currentValues.filter(v => v !== option)
-        : [...currentValues, option];
-      
-      setInterests(prev => ({ ...prev, [key]: newValues }));
-    } else {
-      setInterests(prev => ({ ...prev, [key]: option }));
-    }
+    const newAnswers = [...answers];
+    newAnswers[currentStep] = option;
+    setAnswers(newAnswers);
   };
 
   const handleNext = () => {
@@ -85,28 +77,41 @@ const InterestForm: React.FC = () => {
   const handleSubmit = async () => {
     if (!user) return;
 
+    setLoading(true);
     try {
-      await database.updateUserInterests(user.id, interests);
-      const updatedUser = { ...user, interests, hasCompletedSegmentation: true };
+      const filters: UserFilters = {
+        question_1: answers[0],
+        question_2: answers[1],
+        question_3: answers[2],
+        question_4: answers[3],
+      };
+
+      const { error } = await dbHelpers.saveUserFilters(user.id, filters);
+      
+      if (error) {
+        console.error('Error saving filters:', error);
+        return;
+      }
+
+      const updatedUser = { 
+        ...user, 
+        filters, 
+        hasCompletedSegmentation: true 
+      };
       updateUser(updatedUser);
     } catch (error) {
       console.error('Error updating user interests:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const isStepValid = () => {
-    const question = questions[currentStep];
-    const value = interests[question.key];
-    
-    if (question.type === "multiple") {
-      return Array.isArray(value) && value.length > 0;
-    } else {
-      return value && value.length > 0;
-    }
+    return answers[currentStep] && answers[currentStep].length > 0;
   };
 
   const currentQuestion = questions[currentStep];
-  const selectedValues = interests[currentQuestion.key];
+  const selectedAnswer = answers[currentStep];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
@@ -114,17 +119,17 @@ const InterestForm: React.FC = () => {
         <div className="backdrop-blur-md bg-white/10 rounded-3xl border border-white/20 p-8 shadow-2xl">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-white mb-2">
-              Personalize Your Experience
+              Personaliza tu experiencia
             </h1>
             <p className="text-gray-300">
-              Help us tailor events and updates to your interests
+              Ayúdanos a adaptar el contenido a tus intereses
             </p>
           </div>
 
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm text-purple-400">
-                Step {currentStep + 1} of {questions.length}
+                Paso {currentStep + 1} de {questions.length}
               </span>
               <div className="flex space-x-2">
                 {questions.map((_, index) => (
@@ -154,9 +159,7 @@ const InterestForm: React.FC = () => {
 
           <div className="space-y-3 mb-8">
             {currentQuestion.options.map((option, index) => {
-              const isSelected = currentQuestion.type === "multiple"
-                ? Array.isArray(selectedValues) && selectedValues.includes(option)
-                : selectedValues === option;
+              const isSelected = selectedAnswer === option;
 
               return (
                 <button
@@ -177,13 +180,19 @@ const InterestForm: React.FC = () => {
 
           <button
             onClick={handleNext}
-            disabled={!isStepValid()}
+            disabled={!isStepValid() || loading}
             className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
           >
-            <span>
-              {currentStep === questions.length - 1 ? 'Complete Setup' : 'Next'}
-            </span>
-            <ArrowRight className="w-5 h-5" />
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <>
+                <span>
+                  {currentStep === questions.length - 1 ? 'Completar configuración' : 'Siguiente'}
+                </span>
+                <ArrowRight className="w-5 h-5" />
+              </>
+            )}
           </button>
         </div>
       </div>

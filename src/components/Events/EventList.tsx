@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Clock, User, Edit, Trash2 } from 'lucide-react';
 import { Event } from '../../types';
 import { useAuth } from '../../context/AuthContext';
-import { database } from '../../utils/database';
+import { dbHelpers } from '../../utils/supabaseClient';
 
 interface EventListProps {
   events: Event[];
@@ -15,11 +15,15 @@ const EventList: React.FC<EventListProps> = ({ events, onEventEdit, onEventsUpda
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleDelete = async (eventId: string) => {
-    if (!user?.isAdmin) return;
+    if (!user) return;
     
     setDeletingId(eventId);
     try {
-      await database.deleteEvent(eventId);
+      const { error } = await dbHelpers.deleteEvent(eventId);
+      if (error) {
+        console.error('Error deleting event:', error);
+        return;
+      }
       onEventsUpdate();
     } catch (error) {
       console.error('Error deleting event:', error);
@@ -55,12 +59,12 @@ const EventList: React.FC<EventListProps> = ({ events, onEventEdit, onEventsUpda
                 </div>
                 <div className="flex items-center space-x-1">
                   <User className="w-4 h-4" />
-                  <span>Created by admin</span>
+                  <span>Event</span>
                 </div>
               </div>
             </div>
 
-            {user?.isAdmin && (
+            {user && (
               <div className="flex space-x-2 ml-4">
                 <button
                   onClick={() => onEventEdit(event)}

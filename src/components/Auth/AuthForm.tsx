@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { Mail, Lock, UserPlus, LogIn } from 'lucide-react';
+import { Mail, Lock, UserPlus, LogIn, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const AuthForm: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const { login, register } = useAuth();
 
@@ -15,6 +17,7 @@ const AuthForm: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccess('');
 
     if (!email || !email.includes('@')) {
       setError('Please enter a valid email address');
@@ -22,22 +25,29 @@ const AuthForm: React.FC = () => {
       return;
     }
 
+    if (!password || password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      setLoading(false);
+      return;
+    }
+
     try {
-      let success = false;
+      let result;
       
       if (isLogin) {
-        success = await login(email);
-        if (!success) {
-          setError('User not found. Please register first.');
-        }
+        result = await login(email, password);
       } else {
-        success = await register(email, isAdmin);
-        if (!success) {
-          setError('User already exists. Please login instead.');
-        }
+        result = await register(email, password);
+      }
+
+      if (!result.success) {
+        setError(result.error || 'An error occurred');
+      } else if (result.error) {
+        // This handles the email confirmation case
+        setSuccess(result.error);
       }
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -70,25 +80,35 @@ const AuthForm: React.FC = () => {
                 />
               </div>
 
-              {!isLogin && (
-                <div className="flex items-center space-x-3">
-                  <input
-                    type="checkbox"
-                    id="admin"
-                    checked={isAdmin}
-                    onChange={(e) => setIsAdmin(e.target.checked)}
-                    className="w-4 h-4 text-purple-600 bg-black/30 border-white/20 rounded focus:ring-purple-500"
-                  />
-                  <label htmlFor="admin" className="text-gray-300 text-sm">
-                    Register as administrator
-                  </label>
-                </div>
-              )}
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  className="w-full pl-12 pr-12 py-4 bg-black/30 border border-white/20 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
             </div>
 
             {error && (
               <div className="text-red-400 text-sm text-center bg-red-900/20 rounded-lg p-3">
                 {error}
+              </div>
+            )}
+
+            {success && (
+              <div className="text-green-400 text-sm text-center bg-green-900/20 rounded-lg p-3">
+                {success}
               </div>
             )}
 
@@ -116,6 +136,7 @@ const AuthForm: React.FC = () => {
               onClick={() => {
                 setIsLogin(!isLogin);
                 setError('');
+                setSuccess('');
               }}
               className="text-purple-400 hover:text-purple-300 font-medium mt-2 transition-colors duration-300"
             >
@@ -126,7 +147,7 @@ const AuthForm: React.FC = () => {
           {isLogin && (
             <div className="mt-6 text-center">
               <p className="text-xs text-gray-500">
-                Demo: admin@example.com (admin access)
+                Demo: Create an account to get started
               </p>
             </div>
           )}

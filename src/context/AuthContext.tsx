@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, AuthState } from '../types';
-import { database } from '../utils/database';
+import { supabase, authHelpers, dbHelpers } from '../utils/supabaseClient';
 
 interface AuthContextType extends AuthState {
-  login: (email: string) => Promise<boolean>;
-  register: (email: string, isAdmin?: boolean) => Promise<boolean>;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
   updateUser: (user: User) => void;
 }
 
@@ -31,74 +31,123 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   });
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const savedUser = localStorage.getItem('current_user');
-      if (savedUser) {
-        const user = JSON.parse(savedUser);
-        setAuthState({
-          user,
-          isAuthenticated: true,
-          loading: false
-        });
+    // Get initial session
+    const getInitialSession = async () => {
+      const { session } = await authHelpers.getSession();
+      if (session?.user) {
+        await loadUserData(session.user);
       } else {
         setAuthState(prev => ({ ...prev, loading: false }));
       }
     };
 
-    checkAuth();
-  }, []);
+    getInitialSession();
 
-  const login = async (email: string): Promise<boolean> => {
-    try {
-      const user = await database.getUserByEmail(email);
-      if (user) {
-        localStorage.setItem('current_user', JSON.stringify(user));
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        await loadUserData(session.user);
+      } else if (event === 'SIGNED_OUT') {
         setAuthState({
-          user,
-          isAuthenticated: true,
+          user: null,
+          isAuthenticated: false,
           loading: false
         });
-        return true;
       }
-      return false;
-    } catch (error) {
-      console.error('Login error:', error);
-      return false;
-    }
-  };
+    });
 
-  const register = async (email: string, isAdmin: boolean = false): Promise<boolean> => {
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const loadUserData = async (supabaseUser: any) => {
     try {
-      const existingUser = await database.getUserByEmail(email);
-      if (existingUser) {
-        return false; // User already exists
-      }
+      // Check if user has completed segmentation by looking for filters
+      const { data: filters } = await dbHelpers.getUserFilters(supabaseUser.id);
+      
+      const user: User = {
+        id: supabaseUser.id,
+        email: supabaseUser.email,
+        hasCompletedSegmentation: !!filters,
+        filters: filters || undefined,
+        createdAt: supabaseUser.created_at
+      };
 
-      const newUser = await database.createUser(email, isAdmin);
-      localStorage.setItem('current_user', JSON.stringify(newUser));
       setAuthState({
-        user: newUser,
+        user,
         isAuthenticated: true,
         loading: false
       });
-      return true;
     } catch (error) {
-      console.error('Registration error:', error);
-      return false;
+      console.error('Error loading user data:', error);
+      setAuthState({
+        user: null,
+        isAuthenticated: false,
+        loading: false
+      });
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('current_user');
-    setAuthState({
-      user: null,
-      isAuthenticated: false,
-      loading: false
-    });
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { data, error } = await authHelpers.signIn(email, password);
+      
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      if (data.user) {
+        await loadUserData(data.user);
+        return { success: true };
+      }
+
+      return { success: false, error: 'Login failed' };
+    } catch (error) {
+      console.error('Login error:', error);
+      return { success: false, error: 'An unexpected error occurred' };
+    }
+  };
+
+  const register = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { data, error } = await authHelpers.signUp(email, password);
+      
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      if (data.user) {
+        // For email confirmation flow, user might not be immediately available
+        if (data.user.email_confirmed_at) {
+          await loadUserData(data.user);
+        } else {
+          // Handle email confirmation case
+          setAuthState(prev => ({ ...prev, loading: false }));
+          return { success: true, error: 'Please check your email to confirm your account' };
+        }
+        return { success: true };
+      }
+
+      return { success: false, error: 'Registration failed' };
+    } catch (error) {
+      console.error('Registration error:', error);
+      return { success: false, error: 'An unexpected error occurred' };
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await authHelpers.signOut();
+      setAuthState({
+        user: null,
+        isAuthenticated: false,
+        loading: false
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const updateUser = (user: User) => {
-    localStorage.setItem('current_user', JSON.stringify(user));
     setAuthState(prev => ({ ...prev, user }));
   };
 

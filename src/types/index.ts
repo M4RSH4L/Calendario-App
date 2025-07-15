@@ -1,16 +1,16 @@
 export interface User {
   id: string;
   email: string;
-  isAdmin: boolean;
   hasCompletedSegmentation: boolean;
-  interests?: UserInterests;
+  filters?: UserFilters;
   createdAt: string;
 }
 
-export interface UserInterests {
-  eventTypes: string[];
-  updateFrequency: string;
-  industries: string[];
+export interface UserFilters {
+  question_1: string;
+  question_2: string;
+  question_3: string;
+  question_4: string;
 }
 
 export interface Event {

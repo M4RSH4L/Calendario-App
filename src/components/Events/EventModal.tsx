@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Calendar, Clock, User, Save } from 'lucide-react';
 import { Event } from '../../types';
-import { database } from '../../utils/database';
+import { dbHelpers } from '../../utils/supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 
 interface EventModalProps {
@@ -35,12 +35,20 @@ const EventModal: React.FC<EventModalProps> = ({
     setLoading(true);
     try {
       if (event) {
-        await database.updateEvent(event.id, formData);
+        const { error } = await dbHelpers.updateEvent(event.id, formData);
+        if (error) {
+          console.error('Error updating event:', error);
+          return;
+        }
       } else {
-        await database.createEvent({
+        const { error } = await dbHelpers.createEvent({
           ...formData,
-          createdBy: user.id
+          created_by: user.id
         });
+        if (error) {
+          console.error('Error creating event:', error);
+          return;
+        }
       }
       onEventSaved();
       onClose();

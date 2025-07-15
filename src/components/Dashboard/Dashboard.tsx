@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { LogOut, Settings, Calendar as CalendarIcon } from 'lucide-react';
+import { LogOut, Settings, Calendar as CalendarIcon, Filter } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Event } from '../../types';
-import { database } from '../../utils/database';
+import { dbHelpers } from '../../utils/supabaseClient';
 import Calendar from '../Calendar/Calendar';
 import EventList from '../Events/EventList';
 import EventModal from '../Events/EventModal';
@@ -26,8 +26,12 @@ const Dashboard: React.FC = () => {
   const loadTodayEvents = async () => {
     try {
       const today = new Date().toISOString().split('T')[0];
-      const events = await database.getEventsByDate(today);
-      setTodayEvents(events);
+      const { data: events, error } = await dbHelpers.getEventsByDate(today);
+      if (error) {
+        console.error('Error loading today events:', error);
+        return;
+      }
+      setTodayEvents(events || []);
     } catch (error) {
       console.error('Error loading today events:', error);
     }
@@ -35,8 +39,12 @@ const Dashboard: React.FC = () => {
 
   const loadSelectedDateEvents = async () => {
     try {
-      const events = await database.getEventsByDate(selectedDate);
-      setSelectedDateEvents(events);
+      const { data: events, error } = await dbHelpers.getEventsByDate(selectedDate);
+      if (error) {
+        console.error('Error loading selected date events:', error);
+        return;
+      }
+      setSelectedDateEvents(events || []);
     } catch (error) {
       console.error('Error loading selected date events:', error);
     }
@@ -82,10 +90,11 @@ const Dashboard: React.FC = () => {
             </h1>
             <div className="text-sm text-gray-300">
               Welcome back, {user?.email}
-              {user?.isAdmin && (
-                <span className="ml-2 bg-purple-600/20 text-purple-400 px-2 py-1 rounded-full text-xs">
-                  Admin
-                </span>
+              {user?.hasCompletedSegmentation && (
+                <div className="flex items-center mt-1 space-x-2">
+                  <Filter className="w-3 h-3 text-green-400" />
+                  <span className="text-xs text-green-400">Segmentation completed</span>
+                </div>
               )}
             </div>
           </div>
