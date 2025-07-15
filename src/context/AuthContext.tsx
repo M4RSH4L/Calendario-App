@@ -61,8 +61,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const loadUserData = async (supabaseUser: any) => {
     try {
+      console.log('Loading user data for:', supabaseUser.id);
+      
       // Check if user has completed segmentation by looking for filters
       const { data: filters } = await dbHelpers.getUserFilters(supabaseUser.id);
+      console.log('User filters loaded:', filters);
       
       const user: User = {
         id: supabaseUser.id,
@@ -71,6 +74,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         filters: filters || undefined,
         createdAt: supabaseUser.created_at
       };
+
+      console.log('Setting user state:', user);
 
       setAuthState({
         user,

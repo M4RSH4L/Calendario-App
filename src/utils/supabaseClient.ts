@@ -52,6 +52,8 @@ export const authHelpers = {
 export const dbHelpers = {
   // Save user filters (onboarding data)
   async saveUserFilters(userId: string, filters: any) {
+    console.log('Saving filters to database:', { userId, filters });
+    
     const { data, error } = await supabase
       .from('user_filters')
       .upsert({
@@ -62,6 +64,8 @@ export const dbHelpers = {
         question_4: filters.question_4,
       })
       .select();
+      
+    console.log('Database response:', { data, error });
     return { data, error };
   },
 

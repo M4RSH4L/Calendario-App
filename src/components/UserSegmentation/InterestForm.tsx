@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { Check, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { UserFilters } from '../../types';
-import { dbHelpers } from '../../utils/supabaseClient.ts';
+import { dbHelpers } from '../../utils/supabaseClient';
 
 const InterestForm: React.FC = () => {
   const { user, updateUser } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<string[]>(['', '', '', '']);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const questions = [
     {
@@ -64,6 +65,7 @@ const InterestForm: React.FC = () => {
     const newAnswers = [...answers];
     newAnswers[currentStep] = option;
     setAnswers(newAnswers);
+    setError(''); // Clear any previous errors
   };
 
   const handleNext = () => {
@@ -75,10 +77,24 @@ const InterestForm: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!user) return;
+    if (!user) {
+      setError('Usuario no encontrado. Por favor, inicia sesión nuevamente.');
+      return;
+    }
+
+    // Validate all answers are provided
+    const hasAllAnswers = answers.every(answer => answer && answer.trim().length > 0);
+    if (!hasAllAnswers) {
+      setError('Por favor, responde todas las preguntas antes de continuar.');
+      return;
+    }
 
     setLoading(true);
+    setError('');
+
     try {
+      console.log('Saving user filters...', { userId: user.id, answers });
+
       const filters: UserFilters = {
         question_1: answers[0],
         question_2: answers[1],
@@ -86,28 +102,36 @@ const InterestForm: React.FC = () => {
         question_4: answers[3],
       };
 
-      const { error } = await dbHelpers.saveUserFilters(user.id, filters);
+      const { data, error: saveError } = await dbHelpers.saveUserFilters(user.id, filters);
       
-      if (error) {
-        console.error('Error saving filters:', error);
+      if (saveError) {
+        console.error('Error saving filters:', saveError);
+        setError('Error al guardar las respuestas. Por favor, intenta nuevamente.');
         return;
       }
 
+      console.log('Filters saved successfully:', data);
+
+      // Update user state
       const updatedUser = { 
         ...user, 
         filters, 
         hasCompletedSegmentation: true 
       };
+      
       updateUser(updatedUser);
+      console.log('User updated successfully');
+
     } catch (error) {
-      console.error('Error updating user interests:', error);
+      console.error('Error in handleSubmit:', error);
+      setError('Ocurrió un error inesperado. Por favor, intenta nuevamente.');
     } finally {
       setLoading(false);
     }
   };
 
   const isStepValid = () => {
-    return answers[currentStep] && answers[currentStep].length > 0;
+    return answers[currentStep] && answers[currentStep].trim().length > 0;
   };
 
   const currentQuestion = questions[currentStep];
@@ -178,6 +202,12 @@ const InterestForm: React.FC = () => {
             })}
           </div>
 
+          {error && (
+            <div className="mb-6 p-4 bg-red-900/20 border border-red-500/30 rounded-2xl">
+              <p className="text-red-400 text-sm">{error}</p>
+            </div>
+          )}
+
           <button
             onClick={handleNext}
             disabled={!isStepValid() || loading}
@@ -194,6 +224,14 @@ const InterestForm: React.FC = () => {
               </>
             )}
           </button>
+
+          {/* Debug info - remove in production */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-4 p-3 bg-black/20 rounded-lg text-xs text-gray-400">
+              <p>Debug: Step {currentStep + 1}, User: {user?.id}</p>
+              <p>Answers: {JSON.stringify(answers)}</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
