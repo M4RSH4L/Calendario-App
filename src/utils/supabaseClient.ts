@@ -12,7 +12,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 // Auth helpers
 export const authHelpers = {
   // Sign up with email and password
-  async signUp(email, password) {
+  async signUp(email: string, password: string) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -21,7 +21,7 @@ export const authHelpers = {
   },
 
   // Sign in with email and password
-  async signIn(email, password) {
+  async signIn(email: string, password: string) {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -51,7 +51,7 @@ export const authHelpers = {
 // Database helpers
 export const dbHelpers = {
   // Save user filters (onboarding data)
-  async saveUserFilters(userId, filters) {
+  async saveUserFilters(userId: string, filters: any) {
     const { data, error } = await supabase
       .from('user_filters')
       .upsert({
@@ -66,7 +66,7 @@ export const dbHelpers = {
   },
 
   // Get user filters
-  async getUserFilters(userId) {
+  async getUserFilters(userId: string) {
     const { data, error } = await supabase
       .from('user_filters')
       .select('*')
@@ -75,8 +75,8 @@ export const dbHelpers = {
     return { data, error };
   },
 
-  // Events helpers (keeping existing functionality)
-  async createEvent(event) {
+  // Events helpers
+  async createEvent(event: any) {
     const { data, error } = await supabase
       .from('events')
       .insert(event)
@@ -93,7 +93,7 @@ export const dbHelpers = {
     return { data, error };
   },
 
-  async getEventsByDate(date) {
+  async getEventsByDate(date: string) {
     const { data, error } = await supabase
       .from('events')
       .select('*')
@@ -102,7 +102,7 @@ export const dbHelpers = {
     return { data, error };
   },
 
-  async updateEvent(id, updates) {
+  async updateEvent(id: string, updates: any) {
     const { data, error } = await supabase
       .from('events')
       .update(updates)
@@ -112,7 +112,7 @@ export const dbHelpers = {
     return { data, error };
   },
 
-  async deleteEvent(id) {
+  async deleteEvent(id: string) {
     const { error } = await supabase
       .from('events')
       .delete()

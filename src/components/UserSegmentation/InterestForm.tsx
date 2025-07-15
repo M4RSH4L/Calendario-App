@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Check, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { UserFilters } from '../../types';
-import { dbHelpers } from '../../utils/supabaseClient';
+import { dbHelpers } from '../../utils/supabaseClient.ts';
 
 const InterestForm: React.FC = () => {
   const { user, updateUser } = useAuth();

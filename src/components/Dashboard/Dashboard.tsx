@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { LogOut, Settings, Calendar as CalendarIcon, Filter } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Event } from '../../types';
-import { dbHelpers } from '../../utils/supabaseClient';
+import { dbHelpers } from '../../utils/supabaseClient.ts';
 import Calendar from '../Calendar/Calendar';
 import EventList from '../Events/EventList';
 import EventModal from '../Events/EventModal';

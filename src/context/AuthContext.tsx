@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, AuthState } from '../types';
-import { supabase, authHelpers, dbHelpers } from '../utils/supabaseClient';
+import { supabase, authHelpers, dbHelpers } from '../utils/supabaseClient.ts';
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;

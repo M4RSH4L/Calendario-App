@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Clock, User, Edit, Trash2 } from 'lucide-react';
 import { Event } from '../../types';
 import { useAuth } from '../../context/AuthContext';
-import { dbHelpers } from '../../utils/supabaseClient';
+import { dbHelpers } from '../../utils/supabaseClient.ts';
 
 interface EventListProps {
   events: Event[];

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Calendar, Clock, User, Save } from 'lucide-react';
 import { Event } from '../../types';
-import { dbHelpers } from '../../utils/supabaseClient';
+import { dbHelpers } from '../../utils/supabaseClient.ts';
 import { useAuth } from '../../context/AuthContext';
 
 interface EventModalProps {
