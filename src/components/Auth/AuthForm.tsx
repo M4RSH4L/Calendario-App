@@ -20,18 +20,7 @@ const AuthForm: React.FC = () => {
     setSuccess('');
 
     if (!email || !email.includes('@')) {
-        const result = await signIn(email, password);
-        if (result?.error) {
-          if (result.error.message.includes('Invalid login credentials')) {
-            setError('Credenciales inválidas. Verifica tu email y contraseña.');
-          } else if (result.error.message.includes('Email not confirmed')) {
-            setError('Por favor, confirma tu email. Revisa tu bandeja de entrada y haz clic en el enlace de confirmación.');
-          } else {
-            setError(result.error.message);
-          }
-          setLoading(false);
-          return;
-        }
+      setError('Por favor, ingresa un email válido');
       setLoading(false);
       return;
     }
@@ -48,14 +37,14 @@ const AuthForm: React.FC = () => {
       if (isLogin) {
         result = await login(email, password);
       } else {
-        const result = await signUp(email, password);
+        result = await register(email, password);
         if (result?.error) {
           setError(result.error.message);
           setLoading(false);
           return;
         }
         setError('');
-        setMessage('¡Registro exitoso! Revisa tu email para confirmar tu cuenta antes de iniciar sesión.');
+        setSuccess('¡Registro exitoso! Revisa tu email para confirmar tu cuenta antes de iniciar sesión.');
       }
 
       if (!result.success) {
@@ -171,14 +160,8 @@ const AuthForm: React.FC = () => {
           {isLogin && (
             <div className="mt-6 text-center">
               <p className="text-xs text-gray-500">
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+                ¿Olvidaste tu contraseña?
               </p>
-            </div>
-          )}
-          
-          {message && (
-            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md text-sm">
-              {message}
             </div>
           )}
         </div>
