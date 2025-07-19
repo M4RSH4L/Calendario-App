@@ -125,5 +125,83 @@ export const dbHelpers = {
       .delete()
       .eq('id', id);
     return { error };
+  },
+
+  // Products helpers
+  async createProduct(product: any) {
+    const { data, error } = await supabase
+      .from('products')
+      .insert({
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        image_url: product.imageUrl,
+        platform: product.platform,
+        platform_id: product.platformId,
+        user_id: product.userId
+      })
+      .select()
+      .single();
+    return { data, error };
+  },
+
+  async getProducts() {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false });
+    return { data, error };
+  },
+
+  // Sales helpers
+  async createSale(sale: any) {
+    const { data, error } = await supabase
+      .from('sales')
+      .insert({
+        product_id: sale.productId,
+        quantity: sale.quantity,
+        total_amount: sale.totalAmount,
+        sale_date: sale.saleDate,
+        platform: sale.platform,
+        user_id: sale.userId
+      })
+      .select()
+      .single();
+    return { data, error };
+  },
+
+  async getSales() {
+    const { data, error } = await supabase
+      .from('sales')
+      .select('*')
+      .order('sale_date', { ascending: false });
+    return { data, error };
+  },
+
+  async getTopProductsThisMonth() {
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    const startOfMonthStr = startOfMonth.toISOString().split('T')[0];
+
+    const { data, error } = await supabase
+      .from('sales')
+      .select(`
+        product_id,
+        quantity,
+        total_amount,
+        products (
+          id,
+          name,
+          description,
+          price,
+          image_url,
+          platform,
+          platform_id
+        )
+      `)
+      .gte('sale_date', startOfMonthStr)
+      .order('total_amount', { ascending: false });
+
+    return { data, error };
   }
 };

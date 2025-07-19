@@ -1,7 +1,7 @@
 import React from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AuthForm from './components/Auth/AuthForm';
-import Dashboard from './components/Dashboard/Dashboard';
+import MainApp from './components/MainApp/MainApp';
 import InterestForm from './components/UserSegmentation/InterestForm';
 
 const AppContent: React.FC = () => {
@@ -26,7 +26,7 @@ const AppContent: React.FC = () => {
     return <InterestForm />;
   }
 
-  return <Dashboard />;
+  return <MainApp />;
 };
 
 const App: React.FC = () => {
