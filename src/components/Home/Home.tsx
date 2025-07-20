@@ -37,6 +37,10 @@ const Home: React.FC = () => {
       const { data: salesData, error } = await dbHelpers.getTopProductsThisMonth();
       if (error) {
         console.error('Error loading top products:', error);
+        // If tables don't exist yet, set empty array
+        if (error.code === '42P01' || error.code === 'PGRST200') {
+          setTopProducts([]);
+        }
         return;
       }
 
@@ -82,6 +86,10 @@ const Home: React.FC = () => {
       const { data, error } = await dbHelpers.getProducts();
       if (error) {
         console.error('Error loading products:', error);
+        // If table doesn't exist yet, set empty array
+        if (error.code === '42P01') {
+          setProducts([]);
+        }
         return;
       }
       
